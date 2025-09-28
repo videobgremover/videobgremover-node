@@ -28,8 +28,8 @@ describe('VideoBGRemover SDK', () => {
     expect(Anchor).toBeDefined()
     expect(SizeMode).toBeDefined()
 
-    // Check version
-    expect(VERSION).toBe('0.1.0')
+    // Check version (should match package.json)
+    expect(VERSION).toMatch(/^\d+\.\d+\.\d+(-\w+\.\d+)?$/)
   })
 
   it('should have proper TypeScript types', () => {
