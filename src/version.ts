@@ -1,5 +1,8 @@
 /**
  * Package version information
+ * Automatically imported from package.json
  */
 
-export const VERSION = '0.1.0'
+import { version } from '../package.json'
+
+export const VERSION = version
