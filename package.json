@@ -1,6 +1,6 @@
 {
   "name": "videobgremover",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "description": "Official Node.js SDK for VideoBGRemover API - Remove video backgrounds with AI and compose videos with FFmpeg",
   "keywords": [
     "video",
