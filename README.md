@@ -24,7 +24,7 @@ This SDK simplifies using the VideoBGRemover API and abstracts the complexity of
 ## Installation
 
 ```bash
-npm install videobgremover
+npm install @videobgremover/sdk
 ```
 
 ### Requirements
@@ -38,7 +38,7 @@ npm install videobgremover
 ## Quick Start
 
 ```typescript
-import { VideoBGRemoverClient, Video, Background, Composition, EncoderProfile, Anchor, SizeMode } from 'videobgremover'
+import { VideoBGRemoverClient, Video, Background, Composition, EncoderProfile, Anchor, SizeMode } from '@videobgremover/sdk'
 
 // Initialize client
 const client = new VideoBGRemoverClient(process.env.VIDEOBGREMOVER_API_KEY!)
@@ -90,7 +90,7 @@ const client = new VideoBGRemoverClient('vbr_your_api_key_here')
 ### Basic Background Removal
 
 ```typescript
-import { VideoBGRemoverClient, Video, RemoveBGOptions, Prefer } from 'videobgremover'
+import { VideoBGRemoverClient, Video, RemoveBGOptions, Prefer } from '@videobgremover/sdk'
 
 const client = new VideoBGRemoverClient('your_api_key')
 
@@ -110,7 +110,7 @@ const foreground = await video.removeBackground(client, options)
 import {
   VideoBGRemoverClient, Video, Background, Composition, 
   EncoderProfile, Anchor, SizeMode, RemoveBGOptions, Prefer
-} from 'videobgremover'
+} from '@videobgremover/sdk'
 
 // Initialize client
 const client = new VideoBGRemoverClient('your_api_key')
@@ -245,7 +245,7 @@ const comp2 = comp.setCanvas(3840, 2160, 60.0)  // 4K 60fps
 ## Error Handling
 
 ```typescript
-import { InsufficientCreditsError, ProcessingError } from 'videobgremover'
+import { InsufficientCreditsError, ProcessingError } from '@videobgremover/sdk'
 
 try {
   const foreground = await video.removeBackground(client)
