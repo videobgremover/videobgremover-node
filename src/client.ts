@@ -30,6 +30,7 @@ export interface BackgroundOptions {
 export interface StartJobRequest {
   format?: 'mp4'
   background?: BackgroundOptions
+  webhook_url?: string
 }
 
 export interface JobStatus {
@@ -185,12 +186,32 @@ export class VideoBGRemoverClient {
   }
 
   /**
-   * Get job result with custom background color (matches Python result_color)
+   * Get webhook delivery history for a job
    */
-  async resultColor(jobId: string, hexColor: string): Promise<ResultResponse> {
-    const response = await this.httpClient.post(`/v1/jobs/${jobId}/result`, {
-      background_color: hexColor,
-    })
+  async webhookDeliveries(videoId: string): Promise<{
+    video_id: string
+    total_deliveries: number
+    deliveries: Array<{
+      event_type: string
+      webhook_url: string
+      attempt_number: number
+      delivery_status: string
+      http_status_code: number | null
+      error_message: string | null
+      scheduled_at: string
+      delivered_at: string | null
+      payload: {
+        job_id: string
+        user_id: string
+        status: 'started' | 'completed' | 'failed'
+        file_name?: string
+        error_message?: string
+        source?: 'api' | 'web'
+      }
+      created_at: string
+    }>
+  }> {
+    const response = await this.httpClient.get(`/v1/webhooks/deliveries?video_id=${videoId}`)
     return response.data
   }
 

@@ -199,3 +199,15 @@ export interface ProcessingStatus {
   message: string
   estimatedTimeRemaining?: number
 }
+
+/**
+ * Webhook payload structure
+ */
+export interface WebhookPayload {
+  job_id: string
+  user_id: string
+  status: 'started' | 'completed' | 'failed'
+  file_name?: string
+  error_message?: string
+  source?: 'api' | 'web'
+}

@@ -115,7 +115,12 @@ describe('Real Integration Tests', () => {
       console.log(`  ${message}`)
     }
 
-    const foreground = await video.removeBackground(client, options, 2.0, statusCallback)
+    const foreground = await video.removeBackground({
+      client,
+      options,
+      waitPollSeconds: 2.0,
+      onStatus: statusCallback,
+    })
 
     // Verify we got a result
     expect(foreground).toBeDefined()
@@ -168,7 +173,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.STACKED_VIDEO }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     expect(foreground).toBeDefined()
     // API should return stacked_video format when requested
@@ -211,7 +216,9 @@ describe('Real Integration Tests', () => {
       const invalidVideo = Video.open('https://nonexistent-domain-12345.com/video.mp4')
 
       // This should fail when we try to process it
-      await expect(invalidVideo.removeBackground(client, new RemoveBGOptions())).rejects.toThrow()
+      await expect(
+        invalidVideo.removeBackground({ client, options: new RemoveBGOptions() })
+      ).rejects.toThrow()
 
       console.log('✅ Invalid URL error handling works')
     } catch (error) {
@@ -256,7 +263,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.MOV_PRORES }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     // Verify result and format
     expect(foreground).toBeDefined()
@@ -307,7 +314,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.PRO_BUNDLE }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     // Verify result and format
     expect(foreground).toBeDefined()
@@ -355,7 +362,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     // Verify result and format
     expect(foreground).toBeDefined()
@@ -403,7 +410,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.MOV_PRORES }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     // Verify result and format
     expect(foreground).toBeDefined()
@@ -454,7 +461,7 @@ describe('Real Integration Tests', () => {
     const options: RemoveBGOptions = { prefer: Prefer.PRO_BUNDLE }
 
     // Process video (REAL API CALL)
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
 
     // Verify result and format
     expect(foreground).toBeDefined()
@@ -503,7 +510,7 @@ describe('Real Integration Tests', () => {
 
     // Test WebM VP9 (typically fastest)
     const optionsWebm: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 }
-    const foregroundWebm = await video.removeBackground(client, optionsWebm)
+    const foregroundWebm = await video.removeBackground({ client, options: optionsWebm })
 
     const webmDuration = (Date.now() - startTime) / 1000
 
@@ -603,7 +610,12 @@ describe('Real Integration Tests', () => {
       }
 
       try {
-        const foreground = await video.removeBackground(client, options, 2.0, statusCallback)
+        const foreground = await video.removeBackground({
+          client,
+          options,
+          waitPollSeconds: 2.0,
+          onStatus: statusCallback,
+        })
 
         // Verify processing result
         expect(foreground).toBeDefined()
@@ -674,7 +686,7 @@ describe('Real Integration Tests', () => {
     const video = Video.open(testVideoUrl)
     const options: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 } // Fast format for this test
 
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
     expect(foreground).toBeDefined()
     console.log('✅ Foreground processing completed')
 
@@ -757,7 +769,12 @@ describe('Real Integration Tests', () => {
         }
 
         // REAL API CALL - This will consume credits!
-        const foreground = await video.removeBackground(client, options, 2.0, statusCallback)
+        const foreground = await video.removeBackground({
+          client,
+          options,
+          waitPollSeconds: 2.0,
+          onStatus: statusCallback,
+        })
 
         // Verify processing result
         expect(foreground).toBeDefined()
@@ -847,7 +864,7 @@ describe('Real Integration Tests', () => {
     const videoUrl = Video.open(testVideoUrl)
     const optionsUrl: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 } // Use fast format
 
-    const foregroundUrl = await videoUrl.removeBackground(client, optionsUrl)
+    const foregroundUrl = await videoUrl.removeBackground({ client, options: optionsUrl })
     expect(foregroundUrl).toBeDefined()
     console.log(`✅ URL processing completed: ${foregroundUrl.getFormat()} format`)
 
@@ -875,7 +892,7 @@ describe('Real Integration Tests', () => {
       const videoFile = Video.open('test_assets/default_green_screen.mp4')
       const optionsFile: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 } // Same format for comparison
 
-      const foregroundFile = await videoFile.removeBackground(client, optionsFile)
+      const foregroundFile = await videoFile.removeBackground({ client, options: optionsFile })
       expect(foregroundFile).toBeDefined()
       console.log(`✅ File processing completed: ${foregroundFile.getFormat()} format`)
 
@@ -931,7 +948,7 @@ describe('Real Integration Tests', () => {
     const video = Video.open(testVideoUrl)
     const options: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 } // Fast format for testing
 
-    const foreground = await video.removeBackground(client, options)
+    const foreground = await video.removeBackground({ client, options })
     expect(foreground).toBeDefined()
     console.log(`✅ Foreground processed: ${foreground.getFormat()} format`)
 
@@ -1004,7 +1021,7 @@ describe('Real Integration Tests', () => {
       console.log(`\n🔄 Processing batch item ${i + 1}/${batchConfigs.length}: ${config.name}...`)
 
       const options: RemoveBGOptions = { prefer: config.prefer }
-      const foreground = await video.removeBackground(client, options)
+      const foreground = await video.removeBackground({ client, options })
 
       // Create composition
       if (!testBackgrounds.image || !fs.existsSync(testBackgrounds.image)) {
@@ -1070,7 +1087,12 @@ describe('Real Integration Tests', () => {
       console.log(`  ${message}`)
     }
 
-    const foreground = await video.removeBackground(client, options, 2.0, statusCallback)
+    const foreground = await video.removeBackground({
+      client,
+      options,
+      waitPollSeconds: 2.0,
+      onStatus: statusCallback,
+    })
     expect(foreground).toBeDefined()
     console.log(`✅ Foreground processed with auto format: ${foreground.getFormat()}`)
 
@@ -1149,7 +1171,9 @@ describe('Real Integration Tests', () => {
       const invalidVideo = Video.open('https://nonexistent-domain-12345.com/video.mp4')
 
       // This should fail during processing
-      await expect(invalidVideo.removeBackground(client, new RemoveBGOptions())).rejects.toThrow()
+      await expect(
+        invalidVideo.removeBackground({ client, options: new RemoveBGOptions() })
+      ).rejects.toThrow()
       console.log('✅ Invalid URL properly rejected')
     } catch (error) {
       console.log(`✅ Expected error for invalid URL: ${error}`)
@@ -1211,7 +1235,7 @@ describe('Real Integration Tests', () => {
     const startTime = Date.now()
     const optionsWebm: RemoveBGOptions = { prefer: Prefer.WEBM_VP9 }
 
-    const foregroundWebm = await video.removeBackground(client, optionsWebm)
+    const foregroundWebm = await video.removeBackground({ client, options: optionsWebm })
     const webmDuration = (Date.now() - startTime) / 1000
 
     expect(foregroundWebm).toBeDefined()
@@ -1259,5 +1283,96 @@ describe('Real Integration Tests', () => {
     console.log(`  - Total workflow: ${(webmDuration + compDuration).toFixed(2)}s`)
 
     console.log('✅ Performance and timing testing completed')
+  })
+
+  test('should handle webhook integration end-to-end', async () => {
+    if (!testVideoUrl) {
+      throw new Error('Set TEST_VIDEO_URL environment variable to run webhook tests')
+    }
+
+    const credits = await client.credits()
+    if (credits.remainingCredits < 15) {
+      throw new Error('Not enough credits for webhook integration test')
+    }
+
+    console.log('🔔 Testing webhook integration end-to-end with REAL API...')
+
+    // Use local test webhook endpoint
+    const webhookUrl = 'http://localhost:3000/api/test/webhook'
+    console.log(`📍 Webhook URL: ${webhookUrl}`)
+
+    // Step 1: Create and start job with webhook_url
+    console.log('\n🎬 Step 1: Creating job with webhook URL...')
+
+    // Create job
+    const createResponse = await client.createJobUrl({ video_url: testVideoUrl })
+    const jobId = createResponse.id
+    console.log(`✅ Job created: ${jobId}`)
+
+    // Start job with webhook
+    console.log('🚀 Step 2: Starting job with webhook...')
+    await client.startJob(jobId, {
+      webhook_url: webhookUrl,
+      background: {
+        type: 'transparent',
+        transparent_format: 'webm_vp9',
+      },
+    })
+    console.log(`✅ Job started with webhook: ${webhookUrl}`)
+
+    // Step 3: Wait for job completion
+    console.log('\n⏳ Step 3: Waiting for job completion...')
+    const statusCallback = (status: string) => {
+      const statusMessages: Record<string, string> = {
+        created: '📋 Job created...',
+        uploaded: '📤 Video uploaded...',
+        processing: '🤖 AI processing...',
+        completed: '✅ Processing completed!',
+        failed: '❌ Processing failed!',
+      }
+      const message = statusMessages[status] || `📊 Status: ${status}`
+      console.log(`  ${message}`)
+    }
+
+    const finalStatus = await client.wait(jobId, { pollSeconds: 2.0, onStatus: statusCallback })
+
+    expect(finalStatus.status).toBe('completed')
+    console.log('✅ Job completed successfully')
+
+    // Step 4: Check webhook delivery history
+    console.log('\n📜 Step 4: Checking webhook delivery history...')
+    const deliveries = await client.webhookDeliveries(jobId)
+
+    console.log(`📊 Webhook Delivery Summary:`)
+    console.log(`  - Video ID: ${deliveries.video_id}`)
+    console.log(`  - Total deliveries: ${deliveries.total_deliveries}`)
+
+    // Verify deliveries
+    expect(deliveries.video_id).toBe(jobId)
+    expect(deliveries.total_deliveries).toBeGreaterThanOrEqual(2) // At least job.started and job.completed
+
+    // Check individual deliveries
+    for (const delivery of deliveries.deliveries) {
+      console.log(`\n  🔔 Webhook: ${delivery.event_type}`)
+      console.log(`     - Attempt: ${delivery.attempt_number}`)
+      console.log(`     - Status: ${delivery.delivery_status}`)
+      console.log(`     - HTTP Code: ${delivery.http_status_code}`)
+      console.log(`     - Scheduled: ${delivery.scheduled_at}`)
+      console.log(`     - Delivered: ${delivery.delivered_at}`)
+
+      expect(delivery.webhook_url).toBe(webhookUrl)
+      expect(delivery.delivery_status).toBe('delivered')
+      expect(delivery.http_status_code).toBe(200)
+    }
+
+    // Verify we got both job.started and job.completed
+    const eventTypes = deliveries.deliveries.map(d => d.event_type)
+    expect(eventTypes).toContain('job.started')
+    expect(eventTypes).toContain('job.completed')
+
+    console.log('\n✅ Webhook integration test completed successfully!')
+    console.log('   - job.started webhook delivered')
+    console.log('   - job.completed webhook delivered')
+    console.log('   - Delivery history retrieved successfully')
   })
 })

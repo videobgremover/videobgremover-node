@@ -31,7 +31,8 @@ export class Importer {
     client: VideoBGRemoverClient,
     options: RemoveBGOptions,
     waitPollSeconds: number,
-    onStatus?: (status: string) => void
+    onStatus?: (status: string) => void,
+    webhookUrl?: string
   ): Promise<Foreground> {
     // Choose transparent format
     const transparentFormat = this._chooseFormat(options)
@@ -52,6 +53,7 @@ export class Importer {
           | 'pro_bundle'
           | 'stacked_video',
       },
+      ...(webhookUrl && { webhook_url: webhookUrl }),
     }
 
     await client.startJob(jobId, startRequest)

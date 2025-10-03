@@ -9,7 +9,7 @@
  *
  * const client = new VideoBGRemoverClient(process.env.VIDEOBGREMOVER_API_KEY!)
  * const video = Video.open('path/to/video.mp4')
- * const foreground = await video.removeBackground(client)
+ * const foreground = await video.removeBackground({client})
  *
  * const background = Background.fromColor('#00FF00', 1920, 1080, 30)
  * const composition = new Composition(background)

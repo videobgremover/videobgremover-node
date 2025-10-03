@@ -283,7 +283,7 @@ describe('VideoBGRemover Workflow Tests', () => {
       video.removeBackground = mockRemoveBackground
 
       // Execute workflow
-      const foreground = await video.removeBackground(mockClient, options)
+      const foreground = await video.removeBackground({ client: mockClient, options })
 
       // Verify we got the right format
       expect(foreground.getFormat()).toBe('webm_vp9')
