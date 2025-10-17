@@ -4,6 +4,9 @@
  */
 
 import { execSync } from 'child_process'
+import * as fs from 'fs'
+import * as path from 'path'
+import mime from 'mime-types'
 import { VideoSource, VideoInfo } from './video-source'
 import { MediaContext, defaultContext } from './context'
 
@@ -326,6 +329,80 @@ export class EmptyBackground extends BaseBackground {
 }
 
 /**
+ * Download an image from a URL to a temporary local file (SYNCHRONOUSLY).
+ * Determines file extension from Content-Type header or URL path.
+ */
+function _downloadImageToTemp(imageUrl: string, ctx: MediaContext): string {
+  ctx.logger.debug(`Downloading image from URL: ${imageUrl}`)
+
+  try {
+    // Use synchronous HTTP download with execSync + curl
+    const tempFilePathNoExt = ctx.tempPath('', 'downloaded_image_')
+
+    // First, get Content-Type with HEAD request to determine extension
+    let extension = '.tmp'
+    try {
+      const headCmd = `curl -sIL -m 10 "${imageUrl}" | grep -i "content-type:" | cut -d' ' -f2 | tr -d '\\r'`
+      const contentType = execSync(headCmd, { encoding: 'utf-8', timeout: 10000 }).trim()
+
+      if (contentType) {
+        const cleanContentType = contentType.split(';')[0]?.trim()
+        if (cleanContentType) {
+          const guessedExt = mime.extension(cleanContentType)
+          if (guessedExt) {
+            extension = `.${guessedExt}`
+            ctx.logger.debug(`Guessed extension from Content-Type: ${extension}`)
+          }
+        }
+      }
+    } catch {
+      // HEAD request failed, continue to fallback
+    }
+
+    // 2. Fallback: Determine from URL path, ignoring query parameters
+    if (extension === '.tmp' || extension === '.bin') {
+      try {
+        const url = new URL(imageUrl)
+        const pathWithoutQuery = url.pathname
+        const pathExt = path.extname(pathWithoutQuery)
+        if (pathExt) {
+          extension = pathExt
+          ctx.logger.debug(`Extracted extension from URL path: ${extension}`)
+        }
+      } catch {
+        // Invalid URL, skip this fallback
+      }
+    }
+
+    // 3. Final fallback: If still no good extension, default to .png
+    if (!extension || extension === '.tmp' || extension === '.bin') {
+      extension = '.png'
+      ctx.logger.debug(`Defaulting to extension: ${extension}`)
+    }
+
+    // Create final temp file path with extension
+    const tempFilePath = tempFilePathNoExt + extension
+
+    // Download the file synchronously using curl (with -L to follow redirects)
+    const downloadCmd = `curl -sL -m 30 -o "${tempFilePath}" "${imageUrl}"`
+    execSync(downloadCmd, { timeout: 30000 })
+
+    // Verify the file was created
+    if (!fs.existsSync(tempFilePath) || fs.statSync(tempFilePath).size === 0) {
+      throw new Error('Downloaded file is empty or does not exist')
+    }
+
+    ctx.logger.info(`Downloaded ${imageUrl} to ${tempFilePath}`)
+    return tempFilePath
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to download image from ${imageUrl}: ${error.message}`)
+    }
+    throw new Error(`Failed to download image from ${imageUrl}`)
+  }
+}
+
+/**
  * Probe image dimensions using ffprobe
  */
 function _probeImageDimensions(imagePath: string, ctx: MediaContext): [number, number] {
@@ -473,11 +550,22 @@ export class Background {
    */
   static fromImage(pathOrUrl: string, fps = 30.0, ctx?: MediaContext): ImageBackground {
     const context = ctx || defaultContext()
+    let source = pathOrUrl
+
+    // Check if source is a URL (starts with http:// or https://)
+    const isUrl = source.startsWith('http://') || source.startsWith('https://')
+
+    if (isUrl) {
+      // Download to temporary local file first (fixes slow FFmpeg -loop with URLs)
+      context.logger.info('Image background is a URL, downloading to local temp file...')
+      source = _downloadImageToTemp(source, context)
+      context.logger.info(`Using local image file: ${source}`)
+    }
 
     // Auto-detect dimensions from image
-    const [width, height] = _probeImageDimensions(pathOrUrl, context)
+    const [width, height] = _probeImageDimensions(source, context)
 
-    return new ImageBackground(pathOrUrl, width, height, fps)
+    return new ImageBackground(source, width, height, fps)
   }
 
   /**

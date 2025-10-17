@@ -1788,4 +1788,105 @@ describe('VideoBGRemover Workflow Tests', () => {
       console.log(`    ✅ Audio + timing tests → ${outputPath1}, ${outputPath2}`)
     })
   })
+
+  describe('Image Background URL Performance', () => {
+    test('should test image background URL performance with TWO URLs', async () => {
+      console.log('✅ Testing image background URL performance (FIXED) with 2 URLs...')
+
+      // Get URLs from environment - REQUIRED
+      const testImageUrl1 = process.env.TEST_BACKGROUND_IMAGE_URL
+      const testImageUrl2 = process.env.TEST_BACKGROUND_IMAGE_URL2
+
+      if (!testImageUrl1) {
+        throw new Error('TEST_BACKGROUND_IMAGE_URL environment variable is required')
+      }
+      if (!testImageUrl2) {
+        throw new Error('TEST_BACKGROUND_IMAGE_URL2 environment variable is required')
+      }
+
+      console.log(`  📸 Test image URL 1: ${testImageUrl1}`)
+      console.log(`  📸 Test image URL 2: ${testImageUrl2}`)
+
+      // Use pro_bundle ZIP file as foreground
+      const foreground = Foreground.fromProBundleZip('test_assets/pro_bundle_multiple_formats.zip')
+      const encoder = EncoderProfile.h264({ crf: 20, preset: 'fast' })
+
+      // Test URL 1
+      console.log('\n  🔹 Testing URL 1...')
+      const startProbe1 = Date.now()
+      const bgImage1 = Background.fromImage(testImageUrl1, 24.0)
+      const probeTime1 = (Date.now() - startProbe1) / 1000
+      console.log(`  ⏱️  Download + probing: ${probeTime1.toFixed(2)}s`)
+      console.log(`  📏 Dimensions: ${bgImage1.width}x${bgImage1.height}`)
+
+      const comp1 = new Composition(bgImage1)
+      comp1
+        .add(foreground, 'ai_actor')
+        .at(Anchor.BOTTOM_RIGHT, -30, -30)
+        .size(SizeMode.SCALE, { scale: 0.5 })
+        .audio(true, 1.0)
+
+      const cmd1 = comp1.dryRun()
+      expect(cmd1).toContain('-loop')
+      expect(cmd1).not.toContain(testImageUrl1)
+      expect(cmd1).toContain('downloaded_image_')
+      console.log('  ✅ Using LOCAL FILE (FAST PATH)')
+
+      const outputPath1 = path.join(outputDir, 'image_url_background_1.mp4')
+      const startTime1 = Date.now()
+      await comp1.toFile(outputPath1, encoder)
+      const duration1 = (Date.now() - startTime1) / 1000
+
+      expect(fs.existsSync(outputPath1)).toBe(true)
+      const stats1 = fs.statSync(outputPath1)
+      expect(stats1.size).toBeGreaterThan(0)
+      console.log(`  ✅ URL 1 output: ${outputPath1}`)
+      console.log(`  ⏱️  Composition: ${duration1.toFixed(2)}s`)
+
+      // Test URL 2
+      console.log('\n  🔹 Testing URL 2...')
+      const startProbe2 = Date.now()
+      const bgImage2 = Background.fromImage(testImageUrl2, 24.0)
+      const probeTime2 = (Date.now() - startProbe2) / 1000
+      console.log(`  ⏱️  Download + probing: ${probeTime2.toFixed(2)}s`)
+      console.log(`  📏 Dimensions: ${bgImage2.width}x${bgImage2.height}`)
+
+      const comp2 = new Composition(bgImage2)
+      comp2
+        .add(foreground, 'ai_actor')
+        .at(Anchor.BOTTOM_RIGHT, -30, -30)
+        .size(SizeMode.SCALE, { scale: 0.5 })
+        .audio(true, 1.0)
+
+      const cmd2 = comp2.dryRun()
+      expect(cmd2).toContain('-loop')
+      expect(cmd2).not.toContain(testImageUrl2)
+      expect(cmd2).toContain('downloaded_image_')
+      console.log('  ✅ Using LOCAL FILE (FAST PATH)')
+
+      const outputPath2 = path.join(outputDir, 'image_url_background_2.mp4')
+      const startTime2 = Date.now()
+      await comp2.toFile(outputPath2, encoder)
+      const duration2 = (Date.now() - startTime2) / 1000
+
+      expect(fs.existsSync(outputPath2)).toBe(true)
+      const stats2 = fs.statSync(outputPath2)
+      expect(stats2.size).toBeGreaterThan(0)
+      console.log(`  ✅ URL 2 output: ${outputPath2}`)
+      console.log(`  ⏱️  Composition: ${duration2.toFixed(2)}s`)
+
+      // Summary
+      const total = probeTime1 + duration1 + probeTime2 + duration2
+      console.log('\n  📊 Performance Summary:')
+      console.log(`     URL 1: ${(probeTime1 + duration1).toFixed(2)}s total`)
+      console.log(`     URL 2: ${(probeTime2 + duration2).toFixed(2)}s total`)
+      console.log(`     BOTH: ${total.toFixed(2)}s`)
+
+      if (duration1 < 10 && duration2 < 10) {
+        console.log('  ✅ SUCCESS: Both URLs are FAST! Fix confirmed!')
+      } else {
+        console.log('  ⚠️  Some URLs slow - needs investigation')
+      }
+    })
+  })
 })

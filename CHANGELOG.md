@@ -2,6 +2,11 @@
 
 All notable changes to the VideoBGRemover Node.js SDK will be documented in this file.
 
+## [0.1.4] - 2025-10-17
+
+### Fixed
+- Image background URLs now download to local temp files for faster composition performance
+
 ## [0.1.2] - 2025-10-03
 
 ### Added
