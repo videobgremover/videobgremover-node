@@ -29,6 +29,7 @@ export interface BackgroundOptions {
 
 export interface StartJobRequest {
   format?: 'mp4'
+  model?: string
   background?: BackgroundOptions
   webhook_url?: string
 }

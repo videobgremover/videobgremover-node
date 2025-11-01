@@ -33,6 +33,7 @@ import {
   EncoderProfile,
   RemoveBGOptions,
   Prefer,
+  Model,
   Anchor,
   SizeMode,
 } from '../../src/index'
@@ -1374,5 +1375,112 @@ describe('Real Integration Tests', () => {
     console.log('   - job.started webhook delivered')
     console.log('   - job.completed webhook delivered')
     console.log('   - Delivery history retrieved successfully')
+  })
+
+  test('should process with different model choices', async () => {
+    if (!testVideoUrl) {
+      throw new Error('Set TEST_VIDEO_URL environment variable to run model choice tests')
+    }
+
+    const credits = await client.credits()
+    if (credits.remainingCredits < 30) {
+      throw new Error('Not enough credits for model choice test (need ~30 credits)')
+    }
+
+    console.log('🤖 Testing different model choices with REAL API...')
+
+    // Test both models with the same video
+    const modelsToTest = [
+      { model: Model.VIDEOBGREMOVER_ORIGINAL, name: 'videobgremover-original' },
+      { model: Model.VIDEOBGREMOVER_LIGHT, name: 'videobgremover-light' },
+    ]
+
+    const results: Array<{
+      model: string
+      outputPath: string
+      foreground: Foreground
+      processingTime: number
+    }> = []
+
+    for (const { model, name } of modelsToTest) {
+      console.log(`\n🎬 Processing with ${name} model...`)
+
+      const startTime = Date.now()
+
+      // Load video
+      const video = Video.open(testVideoUrl)
+
+      // Configure with model choice
+      const options: RemoveBGOptions = { prefer: Prefer.WEBM_VP9, model }
+
+      // Status callback for progress
+      const statusCallback = (status: string) => {
+        const statusMessages: Record<string, string> = {
+          created: '📋 Job created...',
+          uploaded: '📤 Video uploaded...',
+          processing: '🤖 AI processing...',
+          completed: '✅ Processing completed!',
+          failed: '❌ Processing failed!',
+        }
+        const message = statusMessages[status] || `📊 Status: ${status}`
+        console.log(`  ${message}`)
+      }
+
+      // Process video (REAL API CALL - consumes credits!)
+      const foreground = await video.removeBackground({
+        client,
+        options,
+        waitPollSeconds: 2.0,
+        onStatus: statusCallback,
+      })
+
+      const processingTime = (Date.now() - startTime) / 1000
+
+      // Verify processing result
+      expect(foreground).toBeDefined()
+      console.log(`✅ ${name} processing completed in ${processingTime.toFixed(2)}s`)
+
+      // Create composition with background
+      if (!testBackgrounds.image || !fs.existsSync(testBackgrounds.image)) {
+        throw new Error('Test background image not found')
+      }
+
+      const bg = Background.fromImage(testBackgrounds.image, 30.0)
+      const comp = new Composition(bg)
+      comp.add(foreground, `model_${name}`).at(Anchor.CENTER).size(SizeMode.CONTAIN)
+
+      // Export composition
+      const outputPath = path.join(outputDir, `model_${name.replace('-', '_')}.mp4`)
+      const encoder = EncoderProfile.h264({ crf: 20, preset: 'medium' })
+
+      console.log(`🔧 Exporting to: ${outputPath}`)
+      await comp.toFile(outputPath, encoder)
+
+      // Verify output
+      expect(fs.existsSync(outputPath)).toBe(true)
+      const stats = fs.statSync(outputPath)
+      expect(stats.size).toBeGreaterThan(0)
+
+      results.push({
+        model: name,
+        outputPath,
+        foreground,
+        processingTime,
+      })
+
+      console.log(`✅ ${name} exported: ${outputPath} (${stats.size} bytes)`)
+    }
+
+    // Verify both models worked
+    expect(results.length).toBe(2)
+
+    console.log('\n📊 Model Choice Results:')
+    for (const result of results) {
+      console.log(
+        `  - ${result.model}: ${result.processingTime.toFixed(2)}s → ${result.outputPath}`
+      )
+    }
+
+    console.log('\n🎉 Model choice test completed successfully!')
   })
 })

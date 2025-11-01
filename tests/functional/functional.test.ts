@@ -32,6 +32,7 @@ import {
   Anchor,
   SizeMode,
   Prefer,
+  Model,
 } from '../../src/index'
 
 // Type definitions for test data
@@ -118,6 +119,36 @@ describe('VideoBGRemover Workflow Tests', () => {
       expect(specificOptions.prefer).toBe(Prefer.MOV_PRORES)
 
       console.log('✅ RemoveBGOptions API compatibility verified')
+    })
+
+    test('should verify Model enum and RemoveBGOptions with model parameter', () => {
+      console.log('✅ Testing Model enum and model parameter...')
+
+      // Test Model enum values
+      expect(Model.VIDEOBGREMOVER_ORIGINAL).toBe('videobgremover-original')
+      expect(Model.VIDEOBGREMOVER_LIGHT).toBe('videobgremover-light')
+
+      // Test RemoveBGOptions with model parameter (using enum)
+      const optionsWithModel = new RemoveBGOptions(Prefer.AUTO, Model.VIDEOBGREMOVER_LIGHT)
+      expect(optionsWithModel.prefer).toBe(Prefer.AUTO)
+      expect(optionsWithModel.model).toBe(Model.VIDEOBGREMOVER_LIGHT)
+
+      // Test static factory method withModel
+      const modelOptions = RemoveBGOptions.withModel(Model.VIDEOBGREMOVER_ORIGINAL)
+      expect(modelOptions.prefer).toBe(Prefer.AUTO)
+      expect(modelOptions.model).toBe(Model.VIDEOBGREMOVER_ORIGINAL)
+
+      // Test combining prefer and model
+      const combinedOptions = new RemoveBGOptions(Prefer.WEBM_VP9, Model.VIDEOBGREMOVER_LIGHT)
+      expect(combinedOptions.prefer).toBe(Prefer.WEBM_VP9)
+      expect(combinedOptions.model).toBe(Model.VIDEOBGREMOVER_LIGHT)
+
+      // Test with plain string (future model that doesn't exist in enum yet)
+      const futureModelOptions = new RemoveBGOptions(Prefer.AUTO, 'videobgremover-ultra' as any)
+      expect(futureModelOptions.model).toBe('videobgremover-ultra')
+      console.log('✅ Plain string models work (future-proof for new models)')
+
+      console.log('✅ Model enum and model parameter verified')
     })
 
     test('should verify MediaContext API matches Python', () => {

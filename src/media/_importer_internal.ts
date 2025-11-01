@@ -53,6 +53,7 @@ export class Importer {
           | 'pro_bundle'
           | 'stacked_video',
       },
+      ...(options.model && { model: options.model }),
       ...(webhookUrl && { webhook_url: webhookUrl }),
     }
 

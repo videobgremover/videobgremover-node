@@ -16,13 +16,23 @@ export enum Prefer {
 }
 
 /**
+ * AI model for background removal
+ */
+export enum Model {
+  VIDEOBGREMOVER_ORIGINAL = 'videobgremover-original',
+  VIDEOBGREMOVER_LIGHT = 'videobgremover-light',
+}
+
+/**
  * Options for background removal processing (matches Python RemoveBGOptions)
  */
 export class RemoveBGOptions {
   public readonly prefer: Prefer
+  public readonly model?: Model
 
-  constructor(prefer: Prefer = Prefer.AUTO) {
+  constructor(prefer: Prefer = Prefer.AUTO, model?: Model) {
     this.prefer = prefer
+    this.model = model
   }
 
   /**
@@ -37,5 +47,12 @@ export class RemoveBGOptions {
    */
   static withPrefer(prefer: Prefer): RemoveBGOptions {
     return new RemoveBGOptions(prefer)
+  }
+
+  /**
+   * Create RemoveBGOptions with specific model
+   */
+  static withModel(model: Model): RemoveBGOptions {
+    return new RemoveBGOptions(Prefer.AUTO, model)
   }
 }

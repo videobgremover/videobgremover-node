@@ -2,6 +2,11 @@
 
 All notable changes to the VideoBGRemover Node.js SDK will be documented in this file.
 
+## [0.1.5] - 2025-11-01
+
+### Added
+- Model selection support: choose between videobgremover-original and videobgremover-light via RemoveBGOptions
+
 ## [0.1.4] - 2025-10-17
 
 ### Fixed

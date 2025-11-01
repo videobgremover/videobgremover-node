@@ -41,6 +41,7 @@ export {
   setDefaultContext,
   RemoveBGOptions,
   Prefer,
+  Model,
 } from './media'
 
 // Types and enums
