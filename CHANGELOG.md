@@ -2,6 +2,11 @@
 
 All notable changes to the VideoBGRemover Node.js SDK will be documented in this file.
 
+## [0.1.6] - 2025-11-12
+
+### Removed
+- Removed `ResultResponse` interface - deprecated endpoint no longer exists in API
+
 ## [0.1.5] - 2025-11-01
 
 ### Added

@@ -77,5 +77,4 @@ export type {
   StartJobRequest,
   JobStatus,
   CreditBalance,
-  ResultResponse,
 } from './client'

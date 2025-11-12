@@ -56,14 +56,6 @@ export interface CreditBalance {
   used_credits: number
 }
 
-export interface ResultResponse {
-  job_id: string
-  status: 'success'
-  download_url: string
-  expires_at: string
-  filename: string
-}
-
 // ============================================================================
 // API CLIENT CLASS (from Python client/api.py)
 // ============================================================================
