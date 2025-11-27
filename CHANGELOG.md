@@ -2,6 +2,11 @@
 
 All notable changes to the VideoBGRemover Node.js SDK will be documented in this file.
 
+## [0.1.7] - 2025-11-27
+
+### Added
+- **Matte composition support**: Added `matte` parameter to `fromVideoAndMask()` for soft alpha blending vs binary masking
+
 ## [0.1.6] - 2025-11-12
 
 ### Removed

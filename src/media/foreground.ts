@@ -17,6 +17,7 @@ export class Foreground extends VideoSource {
   public readonly maskPath?: string
   public readonly audioPath?: string
   public readonly sourceTrim?: [number, number?] // (start, end) for trimming
+  public readonly matte: boolean // When true, use soft alpha (grayscale values directly); when false, convert to binary mask
 
   constructor(
     format: TransparentFormat,
@@ -25,6 +26,7 @@ export class Foreground extends VideoSource {
       maskPath?: string
       audioPath?: string
       sourceTrim?: [number, number?]
+      matte?: boolean
     } = {}
   ) {
     super()
@@ -33,6 +35,7 @@ export class Foreground extends VideoSource {
     this.maskPath = options.maskPath
     this.audioPath = options.audioPath
     this.sourceTrim = options.sourceTrim
+    this.matte = options.matte ?? false
   }
 
   /**
@@ -66,15 +69,25 @@ export class Foreground extends VideoSource {
 
   /**
    * Create foreground from separate RGB video and mask files
+   *
+   * @param videoPath - Path to RGB video file or URL
+   * @param maskPath - Path to mask video file (grayscale)
+   * @param audioPath - Path to separate audio file (optional)
+   * @param ctx - Media context for operations
+   * @param matte - When true, use grayscale values directly for soft alpha blending.
+   *                When false (default), convert to binary mask (threshold at 128).
+   *                Use matte=true for soft edges from matting models (e.g., RVM, MatAnyone).
+   *                Use matte=false for hard masks from segmentation models (e.g., SAM2).
    */
   static fromVideoAndMask(
     videoPath: string,
     maskPath: string,
     audioPath?: string,
-    ctx?: MediaContext
+    ctx?: MediaContext,
+    matte = false
   ): Foreground {
     const context = ctx || defaultContext()
-    const fg = new Foreground('pro_bundle', videoPath, { maskPath, audioPath })
+    const fg = new Foreground('pro_bundle', videoPath, { maskPath, audioPath, matte })
     fg.probeAndStore(videoPath, context) // Probe the RGB video
     return fg
   }
@@ -158,6 +171,7 @@ export class Foreground extends VideoSource {
       maskPath: this.maskPath,
       audioPath: this.audioPath,
       sourceTrim: [start, end],
+      matte: this.matte, // Preserve matte flag
     })
   }
 
@@ -430,16 +444,26 @@ export class Foreground extends VideoSource {
       // Full alpha processing with mask
       const maskInput = `[${inputMap[`${layerLabel}_mask`]}:v]`
 
-      // Create the alphamerge filter chain with proper labels and binary mask conversion
+      // Create the alphamerge filter chain with proper labels
       filters.push(`${rgbInput}format=rgba[${layerLabel}_rgba]`)
       filters.push(`${maskInput}format=gray[${layerLabel}_mask_gray]`)
-      // Convert mask to binary (0 or 255) - same as stacked processing
-      filters.push(
-        `[${layerLabel}_mask_gray]geq='if(gte(lum(X,Y),128),255,0)'[${layerLabel}_binary_mask]`
-      )
-      filters.push(
-        `[${layerLabel}_rgba][${layerLabel}_binary_mask]alphamerge[${layerLabel}_merged]`
-      )
+
+      if (this.matte) {
+        // Matte mode: use grayscale values directly for soft alpha blending
+        // This preserves smooth edges from matting models (RVM, MatAnyone)
+        filters.push(
+          `[${layerLabel}_rgba][${layerLabel}_mask_gray]alphamerge[${layerLabel}_merged]`
+        )
+      } else {
+        // Mask mode: convert to binary (0 or 255) to clean up compression artifacts
+        // This is appropriate for segmentation models (SAM2)
+        filters.push(
+          `[${layerLabel}_mask_gray]geq='if(gte(lum(X,Y),128),255,0)'[${layerLabel}_binary_mask]`
+        )
+        filters.push(
+          `[${layerLabel}_rgba][${layerLabel}_binary_mask]alphamerge[${layerLabel}_merged]`
+        )
+      }
     } else {
       // No alpha - just use RGB directly
       filters.push(`${rgbInput}format=rgb24[${layerLabel}_merged]`)
@@ -463,17 +487,26 @@ export class Foreground extends VideoSource {
       // Full alpha processing with mask
       filters.push(`[${layerLabel}_top]format=rgba[${layerLabel}_top_rgba]`)
 
-      // Extract bottom half (mask), convert to grayscale, and make binary
+      // Extract bottom half (mask), convert to grayscale
       filters.push(`${stackedInput}crop=iw:ih/2:0:ih/2[${layerLabel}_bottom]`)
       filters.push(`[${layerLabel}_bottom]format=gray[${layerLabel}_mask_gray]`)
-      filters.push(
-        `[${layerLabel}_mask_gray]geq='if(gte(lum(X,Y),128),255,0)'[${layerLabel}_binary_mask]`
-      )
 
-      // Apply mask as alpha channel using alphamerge
-      filters.push(
-        `[${layerLabel}_top_rgba][${layerLabel}_binary_mask]alphamerge[${layerLabel}_merged]`
-      )
+      if (this.matte) {
+        // Matte mode: use grayscale values directly for soft alpha blending
+        // This preserves smooth edges from matting models (RVM, MatAnyone)
+        filters.push(
+          `[${layerLabel}_top_rgba][${layerLabel}_mask_gray]alphamerge[${layerLabel}_merged]`
+        )
+      } else {
+        // Mask mode: convert to binary (0 or 255) to clean up compression artifacts
+        // This is appropriate for segmentation models (SAM2)
+        filters.push(
+          `[${layerLabel}_mask_gray]geq='if(gte(lum(X,Y),128),255,0)'[${layerLabel}_binary_mask]`
+        )
+        filters.push(
+          `[${layerLabel}_top_rgba][${layerLabel}_binary_mask]alphamerge[${layerLabel}_merged]`
+        )
+      }
     } else {
       // No alpha - just use RGB from top half directly
       filters.push(`[${layerLabel}_top]format=rgb24[${layerLabel}_merged]`)

@@ -24,7 +24,15 @@ export interface CreateJobUrlDownload {
 export interface BackgroundOptions {
   type: 'color' | 'transparent'
   color?: string
-  transparent_format?: 'webm_vp9' | 'mov_prores' | 'png_sequence' | 'pro_bundle' | 'stacked_video'
+  transparent_format?:
+    | 'webm_vp9'
+    | 'mov_prores'
+    | 'png_sequence'
+    | 'pro_bundle'
+    | 'stacked_video'
+    | 'gif'
+    | 'webp'
+    | 'lottie'
 }
 
 export interface StartJobRequest {

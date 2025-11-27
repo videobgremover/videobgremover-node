@@ -1920,4 +1920,145 @@ describe('VideoBGRemover Workflow Tests', () => {
       }
     })
   })
+
+  describe('Matte Feature - Functional Tests', () => {
+    test('should compose video with matte=true and export', async () => {
+      console.log('🎨 Testing matte feature with matte=true (soft alpha)...')
+
+      const outputPath = path.join(outputDir, 'matte_true_composition.mp4')
+
+      // Create composition with matte foreground (soft edges)
+      const bg = Background.fromColor('#00FF00', 1920, 1080, 30.0)
+      const comp = new Composition(bg)
+      const fg = Foreground.fromVideoAndMask(
+        'test_assets/matte/video_preprocessed.mp4',
+        'test_assets/matte/video_matte.mp4',
+        undefined,
+        undefined,
+        true // matte=true for soft edges
+      )
+      comp.add(fg).at(Anchor.CENTER).size(SizeMode.CONTAIN)
+
+      // Export
+      const encoder = EncoderProfile.h264({ crf: 23, preset: 'fast' })
+      await comp.toFile(outputPath, encoder)
+
+      // Verify output
+      expect(fs.existsSync(outputPath)).toBe(true)
+      const stats = fs.statSync(outputPath)
+      expect(stats.size).toBeGreaterThan(0)
+      console.log(
+        `  ✅ Matte=true output: ${outputPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`
+      )
+    })
+
+    test('should compose video with matte=false and export', async () => {
+      console.log('🎨 Testing matte feature with matte=false (binary mask)...')
+
+      const outputPath = path.join(outputDir, 'matte_false_composition.mp4')
+
+      // Create composition with binary mask foreground (hard edges)
+      const bg = Background.fromColor('#0000FF', 1920, 1080, 30.0)
+      const comp = new Composition(bg)
+      const fg = Foreground.fromVideoAndMask(
+        'test_assets/matte/video_preprocessed.mp4',
+        'test_assets/matte/video_matte.mp4',
+        undefined,
+        undefined,
+        false // matte=false for hard edges
+      )
+      comp.add(fg).at(Anchor.CENTER).size(SizeMode.CONTAIN)
+
+      // Export
+      const encoder = EncoderProfile.h264({ crf: 23, preset: 'fast' })
+      await comp.toFile(outputPath, encoder)
+
+      // Verify output
+      expect(fs.existsSync(outputPath)).toBe(true)
+      const stats = fs.statSync(outputPath)
+      expect(stats.size).toBeGreaterThan(0)
+      console.log(
+        `  ✅ Matte=false output: ${outputPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`
+      )
+    })
+
+    test('should compare matte=true vs matte=false side-by-side', async () => {
+      console.log('🎨 Testing matte comparison: soft edges (left) vs hard edges (right)...')
+
+      const outputPath = path.join(outputDir, 'matte_comparison.mp4')
+
+      // Create side-by-side comparison
+      const bg = Background.fromColor('#808080', 1920, 1080, 30.0)
+      const comp = new Composition(bg)
+
+      // Left side: matte=true (soft edges)
+      const fgMatte = Foreground.fromVideoAndMask(
+        'test_assets/matte/video_preprocessed.mp4',
+        'test_assets/matte/video_matte.mp4',
+        undefined,
+        undefined,
+        true
+      )
+      comp
+        .add(fgMatte, 'matte_true')
+        .at(Anchor.CENTER_LEFT, 100)
+        .size(SizeMode.CANVAS_PERCENT, { percent: 40 })
+
+      // Right side: matte=false (hard edges)
+      const fgBinary = Foreground.fromVideoAndMask(
+        'test_assets/matte/video_preprocessed.mp4',
+        'test_assets/matte/video_matte.mp4',
+        undefined,
+        undefined,
+        false
+      )
+      comp
+        .add(fgBinary, 'matte_false')
+        .at(Anchor.CENTER_RIGHT, -100)
+        .size(SizeMode.CANVAS_PERCENT, { percent: 40 })
+
+      // Export
+      const encoder = EncoderProfile.h264({ crf: 20, preset: 'medium' })
+      await comp.toFile(outputPath, encoder)
+
+      // Verify output
+      expect(fs.existsSync(outputPath)).toBe(true)
+      const stats = fs.statSync(outputPath)
+      expect(stats.size).toBeGreaterThan(0)
+      console.log(
+        `  ✅ Side-by-side comparison: ${outputPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`
+      )
+      console.log('     Left: matte=true (soft alpha), Right: matte=false (binary mask)')
+    })
+
+    test('should compose with matte foreground and image background', async () => {
+      console.log('🎨 Testing matte foreground with image background...')
+
+      const outputPath = path.join(outputDir, 'matte_with_image_bg.mp4')
+
+      // Use image background
+      const bg = Background.fromImage('test_assets/background_image.png', 30.0)
+      const comp = new Composition(bg)
+      const fg = Foreground.fromVideoAndMask(
+        'test_assets/matte/video_preprocessed.mp4',
+        'test_assets/matte/video_matte.mp4',
+        undefined,
+        undefined,
+        true // Soft edges work better with complex backgrounds
+      )
+      comp.add(fg).at(Anchor.CENTER).size(SizeMode.CANVAS_PERCENT, { percent: 60 })
+
+      // Export
+      const encoder = EncoderProfile.h264({ crf: 22, preset: 'fast' })
+      await comp.toFile(outputPath, encoder)
+
+      // Verify output
+      expect(fs.existsSync(outputPath)).toBe(true)
+      const stats = fs.statSync(outputPath)
+      expect(stats.size).toBeGreaterThan(0)
+      console.log(
+        `  ✅ Matte + image background: ${outputPath} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`
+      )
+    })
+  })
 })

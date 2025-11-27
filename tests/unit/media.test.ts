@@ -101,6 +101,112 @@ describe.skip('Foreground', () => {
   })
 })
 
+describe('Foreground - Matte Feature', () => {
+  test('should create from video and mask with matte=true', () => {
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4',
+      undefined,
+      undefined,
+      true // matte=true
+    )
+    expect(fg.format).toBe('pro_bundle')
+    expect(fg.primaryPath).toBe('test_assets/matte/video_preprocessed.mp4')
+    expect(fg.maskPath).toBe('test_assets/matte/video_matte.mp4')
+    expect(fg.matte).toBe(true)
+  })
+
+  test('should create from video and mask with matte=false (default)', () => {
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4'
+    )
+    expect(fg.format).toBe('pro_bundle')
+    expect(fg.matte).toBe(false) // Default is false
+  })
+
+  test('should preserve matte flag in subclip', () => {
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4',
+      undefined,
+      undefined,
+      true
+    )
+    const subclip = fg.subclip(1.0, 3.0)
+    expect(subclip.matte).toBe(true) // Should preserve matte flag
+    expect(subclip.sourceTrim).toEqual([1.0, 3.0])
+  })
+
+  test('should preserve matte=false in subclip', () => {
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4',
+      undefined,
+      undefined,
+      false
+    )
+    const subclip = fg.subclip(2.0, 5.0)
+    expect(subclip.matte).toBe(false)
+  })
+
+  test('should generate correct FFmpeg filter for matte=true (soft alpha)', () => {
+    const bg = Background.fromColor('#FF0000', 1920, 1080, 30.0)
+    const comp = new Composition(bg)
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4',
+      undefined,
+      undefined,
+      true // matte=true
+    )
+    comp.add(fg)
+
+    const cmd = comp.dryRun()
+
+    // Matte mode should NOT include threshold filter (geq)
+    expect(cmd).not.toContain('geq=')
+    // Should still contain alphamerge for combining RGB and mask
+    expect(cmd).toContain('alphamerge')
+    // Should convert mask to grayscale
+    expect(cmd).toContain('format=gray')
+  })
+
+  test('should generate correct FFmpeg filter for matte=false (binary mask)', () => {
+    const bg = Background.fromColor('#0000FF', 1920, 1080, 30.0)
+    const comp = new Composition(bg)
+    const fg = Foreground.fromVideoAndMask(
+      'test_assets/matte/video_preprocessed.mp4',
+      'test_assets/matte/video_matte.mp4',
+      undefined,
+      undefined,
+      false // matte=false (binary mask)
+    )
+    comp.add(fg)
+
+    const cmd = comp.dryRun()
+
+    // Binary mode should include threshold filter (geq) for hard edges
+    expect(cmd).toContain('geq=')
+    expect(cmd).toContain('if(gte(lum(X,Y),128),255,0)')
+    // Should still contain alphamerge
+    expect(cmd).toContain('alphamerge')
+  })
+
+  test('should handle stacked video format', () => {
+    const bg = Background.fromColor('#00FF00', 1920, 1080, 30.0)
+    const comp = new Composition(bg)
+    const fg = Foreground.fromStackedVideo('test_assets/stacked_video_comparison.mp4')
+    comp.add(fg) // Must add the foreground to the composition
+
+    const cmd = comp.dryRun()
+
+    // Stacked video should crop and extract top/bottom halves
+    expect(cmd).toContain('crop=')
+    expect(cmd).toContain('stacked_video_comparison.mp4')
+  })
+})
+
 describe('EncoderProfile', () => {
   test('should create H.264 profile with defaults (matches Python)', () => {
     const encoder = EncoderProfile.h264()
