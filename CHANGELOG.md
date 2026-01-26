@@ -2,6 +2,11 @@
 
 All notable changes to the VideoBGRemover Node.js SDK will be documented in this file.
 
+## [0.1.8] - 2026-01-26
+
+### Added
+- **Job deletion support**: Added `deleteJob()` method to delete jobs and associated files
+
 ## [0.1.7] - 2025-11-27
 
 ### Added

@@ -187,6 +187,14 @@ export class VideoBGRemoverClient {
   }
 
   /**
+   * Delete a job and all associated files
+   */
+  async deleteJob(jobId: string): Promise<{ id: string; message: string }> {
+    const response = await this.httpClient.delete(`/v1/jobs/${jobId}`)
+    return response.data
+  }
+
+  /**
    * Get webhook delivery history for a job
    */
   async webhookDeliveries(videoId: string): Promise<{
