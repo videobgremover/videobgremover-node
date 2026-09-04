@@ -5,7 +5,7 @@
  *
  * @example
  * ```typescript
- * import { VideoBGRemoverClient, Video, Background, Composition, EncoderProfile, Anchor, SizeMode } from 'videobgremover'
+ * import { VideoBGRemoverClient, Video, Background, Composition, EncoderProfile, Anchor, SizeMode } from '@videobgremover/sdk'
  *
  * const client = new VideoBGRemoverClient(process.env.VIDEOBGREMOVER_API_KEY!)
  * const video = Video.open('path/to/video.mp4')

@@ -1,8 +1,8 @@
 # VideoBGRemover Node.js SDK
 
-![npm version](https://img.shields.io/npm/v/videobgremover.svg)
-![Node.js versions](https://img.shields.io/node/v/videobgremover.svg)
-![License](https://img.shields.io/npm/l/videobgremover.svg)
+![npm version](https://img.shields.io/npm/v/%40videobgremover%2Fsdk.svg)
+![Node.js versions](https://img.shields.io/node/v/%40videobgremover%2Fsdk.svg)
+![License](https://img.shields.io/npm/l/%40videobgremover%2Fsdk.svg)
 
 The official Node.js SDK for [VideoBGRemover](https://videobgremover.com) - Remove video backgrounds with AI and compose videos with FFmpeg.
 
@@ -46,14 +46,7 @@ const client = new VideoBGRemoverClient(process.env.VIDEOBGREMOVER_API_KEY!)
 // Remove background from video
 const video = Video.open('https://example.com/video.mp4')
 
-try {
-  const foreground = await video.removeBackground(client)
-} catch (error) {
-  if (error.message.includes('credits')) {
-    console.log('Not enough credits. Please top up your account.')
-    process.exit(1)
-  }
-}
+const foreground = await video.removeBackground({ client })
 
 // Create composition with custom background
 const background = Background.fromColor('#00FF00', 1920, 1080, 30.0)
@@ -66,7 +59,7 @@ await composition.toFile('output.mp4', EncoderProfile.h264())
 
 ## API Key Setup
 
-Get your API key from [VideoBGRemover Dashboard](https://videobgremover.com/dashboard) and set it as an environment variable:
+Create your API key in [API Management](https://videobgremover.com/api-management) and set it as an environment variable:
 
 ```bash
 export VIDEOBGREMOVER_API_KEY="vbr_your_api_key_here"
@@ -80,10 +73,10 @@ const client = new VideoBGRemoverClient('vbr_your_api_key_here')
 
 ## Cost & Credits
 
-- Each video processing consumes credits based on video length
+- Credit usage depends on video duration, model, frame rate, and optional turbo processing
 - Check your balance: `(await client.credits()).remainingCredits`
-- Processing typically takes 1-3 minutes depending on video length
-- Failed jobs don't consume credits
+- Processing time varies with the input, selected model, output format, and current capacity
+- Processing failures trigger a credit refund
 
 ## Usage Examples
 
@@ -101,7 +94,7 @@ const video = Video.open('path/to/video.mp4')
 const options = new RemoveBGOptions(Prefer.WEBM_VP9) // Output format preference
 
 // Remove background
-const foreground = await video.removeBackground(client, options)
+const foreground = await video.removeBackground({ client, options })
 ```
 
 ### Complete Workflow Example
@@ -127,7 +120,12 @@ const statusCallback = (status: string) => {
   console.log(`Status: ${status}`)
 }
 
-const foreground = await video.removeBackground(client, options, 2.0, statusCallback)
+const foreground = await video.removeBackground({
+  client,
+  options,
+  waitPollSeconds: 2.0,
+  onStatus: statusCallback,
+})
 
 // Create composition
 const background = Background.fromImage('background.jpg', 30.0)
@@ -146,7 +144,7 @@ await comp.toFile('final_output.mp4', EncoderProfile.h264({ crf: 20 }))
 ```typescript
 // Process foreground video
 const foregroundVideo = Video.open('person_talking.mp4')
-const foreground = await foregroundVideo.removeBackground(client)
+const foreground = await foregroundVideo.removeBackground({ client })
 
 // Create composition with video background
 const backgroundVideo = Background.fromVideo('nature_scene.mp4')
@@ -248,7 +246,7 @@ const comp2 = comp.setCanvas(3840, 2160, 60.0)  // 4K 60fps
 import { InsufficientCreditsError, ProcessingError } from '@videobgremover/sdk'
 
 try {
-  const foreground = await video.removeBackground(client)
+  const foreground = await video.removeBackground({ client })
 } catch (error) {
   if (error instanceof InsufficientCreditsError) {
     console.log('Not enough credits. Please top up your account.')
