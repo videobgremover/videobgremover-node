@@ -23,6 +23,25 @@ describe('VideoBGRemoverClient', () => {
     mockAxios.restore()
   })
 
+  test('sticker exports infer formats and default to CPU while allowing GPU explicitly', async () => {
+    const client = new VideoBGRemoverClient('test_key')
+    mockAxios.onPost('/v1/jobs/job-1/exports', { sticker_profile: 'telegram-v1', use_gpu: false })
+      .reply(200, { export_id: 'export-1', sticker_profile: 'telegram-v1', format: 'webm_vp9', status: 'queued' })
+    expect((await client.createStickerExport('job-1', { sticker_profile: 'telegram-v1' })).export_id).toBe('export-1')
+    mockAxios.onPost('/v1/jobs/job-1/exports', { sticker_profile: 'telegram-v1', use_gpu: true })
+      .reply(200, { export_id: 'export-2', status: 'queued' })
+    expect((await client.createStickerExport('job-1', { sticker_profile: 'telegram-v1', use_gpu: true })).export_id).toBe('export-2')
+    mockAxios.onGet('/v1/exports/export-1').reply(200, { status: 'completed', output_url: 'https://example.test/sticker.webm' })
+    expect((await client.exportStatus('export-1')).status).toBe('completed')
+  })
+
+  test.each(['sticker-telegram-v1', 'sticker-whatsapp-v1', 'sticker-wechat-v1', 'sticker-discord-v1'] as const)('sends %s through the format field', async (format) => {
+    const client = new VideoBGRemoverClient('test_key')
+    mockAxios.onPost('/v1/jobs/job-1/exports', { format, use_gpu: false })
+      .reply(200, { export_id: 'export-1', format, status: 'queued' })
+    expect((await client.createStickerExport('job-1', { format })).format).toBe(format)
+  })
+
   test('should initialize with default settings', () => {
     const client = new VideoBGRemoverClient('test_key')
     expect(client).toBeDefined()

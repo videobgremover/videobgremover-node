@@ -24,7 +24,9 @@ export interface CreateJobUrlDownload {
 export interface BackgroundOptions {
   type: 'color' | 'transparent'
   color?: string
+  sticker_profile?: StickerProfile
   transparent_format?:
+    | StickerExportFormat
     | 'webm_vp9'
     | 'mov_prores'
     | 'png_sequence'
@@ -32,7 +34,28 @@ export interface BackgroundOptions {
     | 'stacked_video'
     | 'gif'
     | 'webp'
+    | 'apng'
     | 'lottie'
+}
+
+export type StickerProfile = 'telegram-v1' | 'whatsapp-v1' | 'wechat-v1' | 'discord-v1'
+export type StickerExportFormat = `sticker-${StickerProfile}`
+export type StickerExportRequest = ({ format: StickerExportFormat; sticker_profile?: StickerProfile } |
+  { /** @deprecated Use format. */ sticker_profile: StickerProfile; format?: StickerExportFormat }) & {
+  use_gpu?: boolean
+  mask_version?: number
+  webhook_url?: string
+}
+export interface StickerExport {
+  export_id: string
+  job_id: string
+  sticker_profile: StickerProfile
+  format: string
+  status: 'queued' | 'pending' | 'processing' | 'completed' | 'failed'
+  output_url?: string
+  poster_url?: string
+  metadata?: Record<string, unknown> | null
+  error?: string
 }
 
 export interface StartJobRequest {
@@ -140,6 +163,16 @@ export class VideoBGRemoverClient {
   /**
    * Get job status (matches Python status method)
    */
+  async createStickerExport(jobId: string, request: StickerExportRequest): Promise<StickerExport> {
+    const response = await this.httpClient.post(`/v1/jobs/${jobId}/exports`, { use_gpu: false, ...request })
+    return response.data
+  }
+
+  async exportStatus(exportId: string): Promise<StickerExport> {
+    const response = await this.httpClient.get(`/v1/exports/${exportId}`)
+    return response.data
+  }
+
   async status(jobId: string): Promise<JobStatus> {
     const response = await this.httpClient.get(`/v1/jobs/${jobId}/status`)
     return response.data

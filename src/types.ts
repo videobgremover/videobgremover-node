@@ -113,6 +113,7 @@ export interface SizeParams {
  * Transparent format types (matches Python)
  */
 export type TransparentFormat =
+  | import('./client').StickerExportFormat
   | 'webm_vp9'
   | 'mov_prores'
   | 'png_sequence'
